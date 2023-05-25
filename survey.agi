@@ -1,0 +1,37 @@
+#/var/lib/asterisk/agi-bin/
+
+#!/usr/bin/env python3
+import sys
+from asterisk.agi import *
+import MySQLdb
+
+db_host = 'localhost'
+db_user = 'your_username'
+db_pass = 'your_password'
+db_name = 'your_database_name'
+
+caller_id = sys.argv[1]
+survey_answers = sys.argv[2].split('|')
+
+agi = AGI()
+
+# Conectar ao banco de dados
+try:
+    db = MySQLdb.connect(host=db_host, user=db_user, passwd=db_pass, db=db_name)
+    cursor = db.cursor()
+except Exception as e:
+    agi.verbose('Erro ao conectar ao banco de dados: {}'.format(str(e)))
+    sys.exit(1)
+
+# Inserir as respostas da pesquisa no banco de dados
+try:
+    query = "INSERT INTO call_satisfaction (caller_id, answer1, answer2, answer3) VALUES ('{}', '{}', '{}', '{}')".format(caller_id, survey_answers[0], survey_answers[1], survey_answers[2])
+    cursor.execute(query)
+    db.commit()
+except Exception as e:
+    agi.verbose('Erro ao inserir os dados da pesquisa: {}'.format(str(e)))
+    db.rollback()
+    sys.exit(1)
+
+agi.verbose('Pesquisa de satisfação concluída com sucesso.')
+sys.exit(0)
